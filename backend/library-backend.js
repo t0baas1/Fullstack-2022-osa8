@@ -1,5 +1,20 @@
 const { ApolloServer, gql } = require('apollo-server')
 const { v1: uuid } = require('uuid')
+const mongoose = require('mongoose')
+const Book = require('./models/book')
+const Author = require('./models/author')
+
+const MONGODB_URI = 'mongodb+srv://fullstack:mooc2022@cluster0.tomqt.mongodb.net/LibraryDatabase?retryWrites=true&w=majority'
+
+console.log('connecting to', MONGODB_URI)
+
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('connected to MongoDB')
+  })
+  .catch((error) => {
+    console.log('error connection to MongoDB:', error.message)
+  })
 
 let authors = [
   {
@@ -93,9 +108,10 @@ const typeDefs = gql`
 
   type Book {
     title: String!
-    author: String!
     published: Int!
+    author: Author!
     genres: [String!]!
+    id: ID!
   }
 
   type Author {
@@ -116,11 +132,11 @@ const typeDefs = gql`
     addBook(
        title: String!
        author: String!
-       published: Int!
-       genres: [String!]! 
+       published: Int
+       genres: [String!]
     ): Book
     editAuthor(
-        name: String!
+        name: String!,
         setBornTo: Int!
     ): Author
   }
@@ -128,9 +144,9 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    bookCount: () => books.length,
-    authorCount: () => authors.length,
-    allBooks: (root, args) => {
+    bookCount: async () => Book.collection.countDocuments(),
+    authorCount: async () => Author.collection.countDocuments(),
+    allBooks: async (root, args) => {
         if(args.author && args.genre) {
             const filtered = books.filter(b => b.author === args.author)
             return filtered.filter(b => b.genres.includes(args.genre))
@@ -141,23 +157,25 @@ const resolvers = {
         if(args.author && !args.genre){
             return books.filter(b => b.author === args.author)
         }
-        return books
+        return Book.find({})
     },
-    allAuthors: () => authors
+    allAuthors: async () => {
+      return Book.find({})
+    }
     },
     
     Author: {
-        bookCount: (root) => books.filter(b => b.author.includes(root.name)).length
+        //bookCount: (root) => books.filter(b => b.author.includes(root.name)).length
     },
 
     Mutation: {
-        addBook: (root, args) => {
-            if (!(authors.find(a => a.name === args.author))){
-                authors = authors.concat({name: args.author, bookCount: 1, id: uuid()})
+        addBook: async (root, args) => {
+            if (! await Author.findOne({name: args.author})){
+                const author = new Author({name:args.author})
+                author.save()
             }
-            const book = {...args, id: uuid()}
-            books = books.concat(book)
-            return book
+            const book = new Book({ ...args, author: args.author.id})
+            return book.save()
         },
         editAuthor: (root, args) => {
             const author = authors.find(a => a.name === args.name)
