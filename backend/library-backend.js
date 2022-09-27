@@ -168,9 +168,6 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    me: (root, args, context) => {
-      return context.currentUser
-    },
     bookCount: async () => Book.collection.countDocuments(),
     authorCount: async () => Author.collection.countDocuments(),
     allBooks: async (root, args) => {
@@ -187,7 +184,12 @@ const resolvers = {
       return Book.find({})
     },
     allAuthors: async () => {
-      return Book.find({})
+      const a = Author.find({})
+      console.log(a.data)
+      return Author.find({})
+    },
+    me: (root, args, context) => {
+      return context.currentUser
     }
   },
 
@@ -296,17 +298,14 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: async ({ req }) => {
+/*   context: async ({ req }) => {
     const auth = req ? req.headers.authorization : null
     if (auth && auth.toLowerCase().startsWith('bearer ')) {
-      const decodedToken = jwt.verify(
-        auth.substring(7), JWT_SECRET
-      )
-      const currentUser = await User
-        .findById(decodedToken.id)
+      const decodedToken = jwt.verify( auth.substring(7), JWT_SECRET)
+      const currentUser = await User.findById(decodedToken.id)
       return { currentUser }
     }
-  }
+  }, */
 })
 
 server.listen().then(({ url }) => {

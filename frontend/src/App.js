@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@apollo/client'
 import Authors from './components/Authors'
 import Books from './components/Books'
@@ -7,10 +7,18 @@ import NewBook from './components/NewBook'
 import { ALL_AUTHORS, ALL_BOOKS } from './queries'
 
 const App = () => {
-  const result = useQuery(ALL_AUTHORS)
+  const [token, setToken] = useState(null)
   const resultb = useQuery(ALL_BOOKS)
+  const result = useQuery(ALL_AUTHORS)
   const [page, setPage] = useState('authors')
-  console.log(resultb)
+  console.log(result)
+/* 
+  useEffect(()=>{
+    const logged= localStorage.getItem('library-user-token')
+    if(logged){
+      setToken(logged)
+    }
+  },[]) */
 
   if (result.loading || resultb.loading)  {
     return <div>loading...</div>
